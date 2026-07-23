@@ -8,5 +8,5 @@ Renamed and standardized column headers using a consistent naming convention wit
 Verified and corrected data types where required (numeric and date columns).
 Improved data readability by converting the Complain column values from 0/1 to No/Yes.
 
-#output
-The cleaned dataset is provided as "mall_cleaned.xlsx"
+###output
+The cleaned dataset is provided as "Customer_segmentation_cleaned.xlsx"

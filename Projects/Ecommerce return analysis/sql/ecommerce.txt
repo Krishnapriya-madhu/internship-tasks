@@ -1,0 +1,387 @@
+mysql> CREATE DATABASE ecommerce_db;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> USE ecommerce_db;
+Database changed
+mysql> CREATE TABLE ecommerce_orders (
+    ->     order_id VARCHAR(50),
+    ->     customer_id VARCHAR(50),
+    ->     product_id VARCHAR(50),
+    ->     category VARCHAR(50),
+    ->     price DECIMAL(10,2),
+    ->     discount DECIMAL(10,2),
+    ->     quantity INT,
+    ->     payment_method VARCHAR(50),
+    ->     order_date DATE,
+    ->     delivery_time_days INT,
+    ->     region VARCHAR(50),
+    ->     returned VARCHAR(10),
+    ->     total_amount DECIMAL(12,2),
+    ->     shipping_cost DECIMAL(10,2),
+    ->     profit_margin DECIMAL(10,2),
+    ->     customer_age INT,
+    ->     customer_gender VARCHAR(20)
+    -> );
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> SHOW TABLES;
++------------------------+
+| Tables_in_ecommerce_db |
++------------------------+
+| ecommerce_orders       |
++------------------------+
+1 row in set (0.02 sec)
+
+mysql> SHOW VARIABLES LIKE 'secure_file_priv';
++------------------+------------------------------------------------+
+| Variable_name    | Value                                          |
++------------------+------------------------------------------------+
+| secure_file_priv | C:\ProgramData\MySQL\MySQL Server 8.0\Uploads\ |
++------------------+------------------------------------------------+
+1 row in set (0.01 sec)
+
+mysql> LOAD DATA INFILE
+    -> 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/ecommerce_sales_cleaned.csv'
+    -> INTO TABLE ecommerce_orders
+    -> FIELDS TERMINATED BY ','
+    -> ENCLOSED BY '"'
+    -> LINES TERMINATED BY '\n'
+    -> IGNORE 1 ROWS;
+Query OK, 34500 rows affected (0.77 sec)
+Records: 34500  Deleted: 0  Skipped: 0  Warnings: 0
+
+mysql> SELECT COUNT(*) AS total_records
+    -> FROM ecommerce_orders;
++---------------+
+| total_records |
++---------------+
+|         34500 |
++---------------+
+1 row in set (0.04 sec)
+
+mysql> SELECT *
+    -> FROM ecommerce_orders
+    -> LIMIT 10;
++----------+-------------+------------+-------------+--------+----------+----------+----------------+------------+--------------------+--------+----------+--------------+---------------+---------------+--------------+-----------------+
+| order_id | customer_id | product_id | category    | price  | discount | quantity | payment_method | order_date | delivery_time_days | region | returned | total_amount | shipping_cost | profit_margin | customer_age | customer_gender |
++----------+-------------+------------+-------------+--------+----------+----------+----------------+------------+--------------------+--------+----------+--------------+---------------+---------------+--------------+-----------------+
+| O100000  | C17270      | P234890    | Home        | 164.08 |     0.15 |        1 | Credit Card    | 2023-12-23 |                  4         || No       |       139.47 |          7.88 |         31.17 |           60 | Female
+| O100001  | C17603      | P228204    | Grocery     |  24.73 |     0.00 |        1 | Credit Card    | 2025-04-03 |                  6           |No       |        24.73 |          4.60 |         -2.62 |           37 | Male
+| O100002  | C10860      | P213892    | Electronics | 175.58 |     0.05 |        1 | Credit Card    | 2024-10-08 |                  4           |No       |       166.80 |          6.58 |         13.44 |           34 | Male
+| O100003  | C15390      | P208689    | Electronics |  63.67 |     0.00 |        1 | UPI            | 2024-09-14 |                  6         || No       |        63.67 |          5.50 |          2.14 |           21 | Female
+| O100004  | C15226      | P228063    | Home        |  16.33 |     0.15 |        1 | COD            | 2024-12-21 |                  6           |No       |        13.88 |          2.74 |          1.15 |           39 | Male
+| O100005  | C15191      | P214062    | Beauty      |  53.91 |     0.10 |        2 | Credit Card    | 2024-04-14 |                  5         || No       |        97.04 |          6.32 |         37.35 |           35 | Female
+| O100006  | C13772      | P201363    | Electronics | 266.50 |     0.00 |        1 | PayPal         | 2025-05-20 |                  5           |No       |       266.50 |          9.10 |         22.88 |           49 | Male
+| O100007  | C13092      | P216691    | Beauty      |   9.98 |     0.00 |        1 | Credit Card    | 2023-09-14 |                  4          | No       |         9.98 |          4.51 |         -0.02 |           66 | Other
+| O100008  | C15734      | P202751    | Fashion     |   6.61 |     0.05 |        1 | Debit Card     | 2023-10-23 |                  6         || No       |         6.28 |          3.43 |         -1.23 |           37 | Female
+| O100009  | C16265      | P207782    | Grocery     |  10.91 |     0.00 |        1 | Credit Card    | 2023-10-31 |                  6           |No       |        10.91 |          2.76 |         -1.89 |           56 | Male
++----------+-------------+------------+-------------+--------+----------+----------+----------------+------------+--------------------+--------+----------+--------------+---------------+---------------+--------------+-----------------+
+10 rows in set (0.00 sec)
+
+mysql> SELECT
+    ->     returned,
+    ->     COUNT(*) AS total_orders
+    -> FROM ecommerce_orders
+    -> GROUP BY returned;
++----------+--------------+
+| returned | total_orders |
++----------+--------------+
+| No       |        32597 |
+| Yes      |         1903 |
++----------+--------------+
+2 rows in set (0.10 sec)
+
+mysql> SELECT
+    ->     COUNT(*) AS total_orders,
+    ->     SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END) AS returned_orders,
+    ->     SUM(CASE WHEN returned = 'No' THEN 1 ELSE 0 END) AS non_returned_orders,
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    -> FROM ecommerce_orders;
++--------------+-----------------+---------------------+-------------+
+| total_orders | returned_orders | non_returned_orders | return_rate |
++--------------+-----------------+---------------------+-------------+
+|        34500 |            1903 |               32597 |        5.52 |
++--------------+-----------------+---------------------+-------------+
+1 row in set (0.06 sec)
+
+mysql> SELECT
+    ->     category,
+    ->     COUNT(*) AS total_orders,
+    ->     SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END) AS returned_orders,
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    -> FROM ecommerce_orders
+    -> GROUP BY category
+    -> ORDER BY return_rate DESC;
++-------------+--------------+-----------------+-------------+
+| category    | total_orders | returned_orders | return_rate |
++-------------+--------------+-----------------+-------------+
+| Fashion     |         6254 |             518 |        8.28 |
+| Electronics |         6180 |             451 |        7.30 |
+| Home        |         5487 |             310 |        5.65 |
+| Toys        |         4247 |             210 |        4.94 |
+| Sports      |         4171 |             206 |        4.94 |
+| Beauty      |         4103 |             155 |        3.78 |
+| Grocery     |         4058 |              53 |        1.31 |
++-------------+--------------+-----------------+-------------+
+7 rows in set (0.11 sec)
+
+mysql> SELECT
+    ->     region,
+    ->     COUNT(*) AS total_orders,
+    ->     SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END) AS returned_orders,
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    -> FROM ecommerce_orders
+    -> GROUP BY region
+    -> ORDER BY return_rate DESC;
++---------+--------------+-----------------+-------------+
+| region  | total_orders | returned_orders | return_rate |
++---------+--------------+-----------------+-------------+
+| East    |         6904 |             408 |        5.91 |
+| South   |         7584 |             431 |        5.68 |
+| West    |         6808 |             371 |        5.45 |
+| North   |         7572 |             406 |        5.36 |
+| Central |         5632 |             287 |        5.10 |
++---------+--------------+-----------------+-------------+
+5 rows in set (0.14 sec)
+
+mysql> SELECT
+    ->     payment_method,
+    ->     COUNT(*) AS total_orders,
+    ->     SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END) AS returned_orders,
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    -> FROM ecommerce_orders
+    -> GROUP BY payment_method
+    -> ORDER BY return_rate DESC;
++----------------+--------------+-----------------+-------------+
+| payment_method | total_orders | returned_orders | return_rate |
++----------------+--------------+-----------------+-------------+
+| PayPal         |         3444 |             199 |        5.78 |
+| Debit Card     |         8505 |             482 |        5.67 |
+| Credit Card    |        12170 |             675 |        5.55 |
+| UPI            |         4156 |             224 |        5.39 |
+| Wallet         |         2065 |             111 |        5.38 |
+| COD            |         4160 |             212 |        5.10 |
++----------------+--------------+-----------------+-------------+
+6 rows in set (0.28 sec)
+
+mysql> SELECT
+    ->     customer_gender,
+    ->     COUNT(*) AS total_orders,
+    ->     SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END) AS returned_orders,
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    -> FROM ecommerce_orders
+    -> GROUP BY customer_gender
+    -> ORDER BY return_rate DESC;
++-----------------+--------------+-----------------+-------------+
+| customer_gender | total_orders | returned_orders | return_rate |
++-----------------+--------------+-----------------+-------------+
+         |        16818 |             945 |        5.62 |
+           |        16310 |             887 |        5.44 |
+          |         1372 |              71 |        5.17 |
++-----------------+--------------+-----------------+-------------+
+3 rows in set (0.21 sec)
+
+mysql> SELECT
+    ->     CASE
+    ->         WHEN customer_age < 25 THEN '18-24'
+    ->         WHEN customer_age < 35 THEN '25-34'
+    ->         WHEN customer_age < 45 THEN '35-44'
+    ->         WHEN customer_age < 55 THEN '45-54'
+    ->         ELSE '55+'
+    ->     END AS age_group,
+    ->
+    ->     COUNT(*) AS total_orders,
+    ->
+    ->     SUM(
+    ->         CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END
+    ->     ) AS returned_orders,
+    ->
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    ->
+    -> FROM ecommerce_orders
+    -> GROUP BY age_group
+    -> ORDER BY return_rate DESC;
++-----------+--------------+-----------------+-------------+
+| age_group | total_orders | returned_orders | return_rate |
++-----------+--------------+-----------------+-------------+
+| 35-44     |         6659 |             389 |        5.84 |
+| 45-54     |         6654 |             369 |        5.55 |
+| 25-34     |         6755 |             369 |        5.46 |
+| 55+       |         9877 |             535 |        5.42 |
+| 18-24     |         4555 |             241 |        5.29 |
++-----------+--------------+-----------------+-------------+
+5 rows in set (0.14 sec)
+
+mysql> SELECT
+    ->     CASE
+    ->         WHEN discount < 10 THEN '0-9%'
+    ->         WHEN discount < 20 THEN '10-19%'
+    ->         WHEN discount < 30 THEN '20-29%'
+    ->         ELSE '30%+'
+    ->     END AS discount_group,
+    ->
+    ->     COUNT(*) AS total_orders,
+    ->
+    ->     SUM(
+    ->         CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END
+    ->     ) AS returned_orders,
+    ->
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    ->
+    -> FROM ecommerce_orders
+    -> GROUP BY discount_group
+    -> ORDER BY return_rate DESC;
++----------------+--------------+-----------------+-------------+
+| discount_group | total_orders | returned_orders | return_rate |
++----------------+--------------+-----------------+-------------+
+| 0-9%           |        34500 |            1903 |        5.52 |
++----------------+--------------+-----------------+-------------+
+1 row in set (0.17 sec)
+
+mysql> SELECT
+    ->     CASE
+    ->         WHEN delivery_time_days <= 2 THEN '1-2 Days'
+    ->         WHEN delivery_time_days <= 5 THEN '3-5 Days'
+    ->         WHEN delivery_time_days <= 7 THEN '6-7 Days'
+    ->         ELSE '8+ Days'
+    ->     END AS delivery_group,
+    ->
+    ->     COUNT(*) AS total_orders,
+    ->
+    ->     SUM(
+    ->         CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END
+    ->     ) AS returned_orders,
+    ->
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    ->
+    -> FROM ecommerce_orders
+    -> GROUP BY delivery_group
+    -> ORDER BY return_rate DESC;
++----------------+--------------+-----------------+-------------+
+| delivery_group | total_orders | returned_orders | return_rate |
++----------------+--------------+-----------------+-------------+
+| 8+ Days        |          842 |              51 |        6.06 |
+| 6-7 Days       |         8361 |             468 |        5.60 |
+| 3-5 Days       |        25297 |            1384 |        5.47 |
++----------------+--------------+-----------------+-------------+
+3 rows in set (0.10 sec)
+
+mysql> SELECT
+    ->     returned,
+    ->     COUNT(*) AS total_orders,
+    ->     ROUND(SUM(total_amount), 2) AS total_revenue,
+    ->     ROUND(AVG(total_amount), 2) AS average_order_value,
+    ->     ROUND(AVG(profit_margin), 2) AS average_profit_margin
+    -> FROM ecommerce_orders
+    -> GROUP BY returned;
++----------+--------------+---------------+---------------------+-----------------------+
+| returned | total_orders | total_revenue | average_order_value | average_profit_margin |
++----------+--------------+---------------+---------------------+-----------------------+
+| No       |        32597 |    5476537.08 |              168.01 |                 27.86 |
+| Yes      |         1903 |     388755.97 |              204.29 |                 32.48 |
++----------+--------------+---------------+---------------------+-----------------------+
+2 rows in set (0.20 sec)
+
+mysql> SELECT
+    ->     category,
+    ->     region,
+    ->     COUNT(*) AS total_orders,
+    ->
+    ->     SUM(
+    ->         CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END
+    ->     ) AS returned_orders,
+    ->
+    ->     ROUND(
+    ->         100 * SUM(CASE WHEN returned = 'Yes' THEN 1 ELSE 0 END)
+    ->         / COUNT(*),
+    ->         2
+    ->     ) AS return_rate
+    ->
+    -> FROM ecommerce_orders
+    -> GROUP BY category, region
+    -> ORDER BY return_rate DESC;
++-------------+---------+--------------+-----------------+-------------+
+| category    | region  | total_orders | returned_orders | return_rate |
++-------------+---------+--------------+-----------------+-------------+
+| Fashion     | North   |         1317 |             120 |        9.11 |
+| Fashion     | South   |         1354 |             120 |        8.86 |
+| Fashion     | East    |         1306 |             112 |        8.58 |
+| Electronics | East    |         1262 |             107 |        8.48 |
+| Electronics | South   |         1409 |             105 |        7.45 |
+| Fashion     | West    |         1275 |              95 |        7.45 |
+| Fashion     | Central |         1002 |              71 |        7.09 |
+| Electronics | North   |         1334 |              93 |        6.97 |
+| Electronics | West    |         1232 |              83 |        6.74 |
+| Electronics | Central |          943 |              63 |        6.68 |
+| Home        | Central |          911 |              58 |        6.37 |
+| Home        | East    |         1117 |              69 |        6.18 |
+| Toys        | West    |          823 |              48 |        5.83 |
+| Home        | West    |         1089 |              63 |        5.79 |
+| Home        | South   |         1155 |              64 |        5.54 |
+| Sports      | North   |          872 |              47 |        5.39 |
+| Toys        | East    |          814 |              43 |        5.28 |
+| Sports      | West    |          830 |              43 |        5.18 |
+| Toys        | South   |          921 |              47 |        5.10 |
+| Sports      | South   |          954 |              48 |        5.03 |
+| Home        | North   |         1215 |              56 |        4.61 |
+| Sports      | East    |          811 |              37 |        4.56 |
+| Sports      | Central |          704 |              31 |        4.40 |
+| Toys        | Central |          719 |              31 |        4.31 |
+| Toys        | North   |          970 |              41 |        4.23 |
+| Beauty      | South   |          918 |              37 |        4.03 |
+| Beauty      | Central |          676 |              27 |        3.99 |
+| Beauty      | North   |          926 |              35 |        3.78 |
+| Beauty      | East    |          802 |              29 |        3.62 |
+| Beauty      | West    |          781 |              27 |        3.46 |
+| Grocery     | West    |          778 |              12 |        1.54 |
+| Grocery     | North   |          938 |              14 |        1.49 |
+| Grocery     | East    |          792 |              11 |        1.39 |
+| Grocery     | South   |          873 |              10 |        1.15 |
+| Grocery     | Central |          677 |               6 |        0.89 |
++-------------+---------+--------------+-----------------+-------------+
+35 rows in set (0.22 sec)
+
+mysql> SELECT
+    ->     returned,
+    ->     COUNT(*) AS count
+    -> FROM ecommerce_orders
+    -> GROUP BY returned;
++----------+-------+
+| returned | count |
++----------+-------+
+| No       | 32597 |
+| Yes      |  1903 |
++----------+-------+
+2 rows in set (0.14 sec)
